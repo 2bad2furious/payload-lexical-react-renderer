@@ -1,8 +1,11 @@
-import type {ElementRenderers, Node} from "../types";
+import type {Asyncable, ElementRenderers, Node} from "../types";
 import type React from "react";
 
-export function createElementRenderer(elementRenderers: ElementRenderers) {
-    return (node: Node, children?: React.ReactNode) => {
+export type ElementRenderer<Async extends boolean> = ReturnType<typeof createElementRenderer<Async>>
+export type RenderedElement<Async extends boolean> = Asyncable<Async, React.ReactNode>
+
+export function createElementRenderer<Async extends boolean>(elementRenderers: ElementRenderers<Async>) {
+    return (node: Node, children?: React.ReactNode): RenderedElement<Async> => {
         if (!elementRenderers) {
             throw new Error("'elementRenderers' prop not provided.");
         }

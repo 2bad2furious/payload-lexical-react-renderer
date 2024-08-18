@@ -1,25 +1,29 @@
-import React from "react";
-import type {BlockRenderers, Node} from "../types";
-import type {createTextRenderer} from "./textRenderer";
-import {createElementRenderer} from "./elementRenderer";
+import React, {ReactNode} from "react";
+import type {Asyncable, BlockRenderers, Node} from "../types";
+import type {TextRenderer} from "./textRenderer";
+import {ElementRenderer} from "./elementRenderer";
+import {mapWhenReady} from "./mapWhenReady";
 
-export function createSerializer(
-    renderText: ReturnType<typeof createTextRenderer>,
-    blockRenderers: BlockRenderers<Record<string, any>>,
-    renderElement: ReturnType<typeof createElementRenderer>
+type Serialized<Async extends boolean> = Asyncable<Async, ReactNode[]>;
+
+export function createSerializer<Async extends boolean>(
+    async: Async,
+    renderText: TextRenderer<Async>,
+    blockRenderers: BlockRenderers<Async, Record<string, any>>,
+    renderElement: ElementRenderer<Async>
 ) {
-    function serialize(children: Node[]): React.ReactNode[] | null {
-        return children.map((node, index) => {
+    function serialize(children: Node[]): Serialized<Async> {
+        const mappedChildren: Asyncable<Async, ReactNode>[] = children.map((node, index) => {
             if (node.type === "text") {
                 return (
-                    <React.Fragment key={index}>{renderText(node)}</React.Fragment>
+                    mapWhenReady(renderText(node), text => <React.Fragment key={index}>{text}</React.Fragment>)
                 );
             }
 
             if (node.type === "block") {
                 const renderer = blockRenderers[node.fields.blockType] as (
                     props: unknown,
-                ) => React.ReactNode;
+                ) => Asyncable<Async, React.ReactNode>;
 
                 if (typeof renderer !== "function") {
                     throw new Error(
@@ -27,7 +31,7 @@ export function createSerializer(
                     );
                 }
 
-                return <React.Fragment key={index}>{renderer(node)}</React.Fragment>;
+                return mapWhenReady(renderer(node), block => <React.Fragment key={index}>{block}</React.Fragment>);
             }
 
             if (
@@ -35,17 +39,25 @@ export function createSerializer(
                 node.type === "tab" ||
                 node.type === "upload"
             ) {
-                return (
-                    <React.Fragment key={index}>{renderElement(node)}</React.Fragment>
-                );
+                return mapWhenReady(renderElement(node), el => <React.Fragment key={index}>{el}</React.Fragment>);
             }
 
-            return (
-                <React.Fragment key={index}>
-                    {renderElement(node, serialize(node.children))}
-                </React.Fragment>
+            return mapWhenReady(
+                serialize(node.children),
+                children => {
+                    return mapWhenReady(
+                        renderElement(node, children),
+                        el => <React.Fragment key={index}>{el}</React.Fragment>
+                    );
+                }
             );
         });
+
+        if (async) {
+            return Promise.all(mappedChildren) as unknown as Serialized<Async>;
+        }
+
+        return mappedChildren as (ReactNode)[];
     }
 
     return serialize;

@@ -1,4 +1,3 @@
-import React from "react";
 import type {
     BlockRenderers,
     BlocksType,
@@ -6,40 +5,44 @@ import type {
     PayloadLexicalReactRendererContent,
     RenderMark
 } from "./types";
-import {createElementRenderer, createTextRenderer, defaultElementRenderers, defaultRenderMark} from "./utils";
-import {createSerializer} from "./utils";
+import {
+    createElementRenderer,
+    createSerializer,
+    createTextRenderer,
+    defaultElementRenderers,
+    defaultRenderMark,
+    mapWhenReady
+} from "./utils";
 
 export type PayloadLexicalReactRendererProps<
     Blocks extends BlocksType,
+    Async extends boolean = false
 > = {
+    async?: Async;
     content: PayloadLexicalReactRendererContent;
-    elementRenderers?: ElementRenderers;
-    renderMark?: RenderMark;
-    blockRenderers?: BlockRenderers<Blocks>;
+    elementRenderers?: ElementRenderers<Async>;
+    renderMark?: RenderMark<Async>;
+    blockRenderers?: BlockRenderers<Async, Blocks>;
 };
 
 export function PayloadLexicalReactRenderer<
     Blocks extends BlocksType,
+    Async extends boolean = false
 >({
+      async,
       content,
-      elementRenderers = defaultElementRenderers,
+      elementRenderers = defaultElementRenderers as ElementRenderers<boolean>,
       renderMark = defaultRenderMark,
       blockRenderers = {},
-  }: PayloadLexicalReactRendererProps<Blocks>) {
-    const renderElement = React.useMemo(
-        () => createElementRenderer(elementRenderers),
-        [elementRenderers],
-    );
+  }: PayloadLexicalReactRendererProps<Blocks, Async>) {
+    const renderElement = createElementRenderer<Async>(elementRenderers);
 
-    const renderText = React.useMemo(
-        () => createTextRenderer(renderMark),
-        [renderMark],
-    );
+    const renderText = createTextRenderer<Async>(renderMark);
 
-    const serialize = React.useMemo(
-        () => createSerializer(renderText, blockRenderers, renderElement),
-        [renderElement, renderText, blockRenderers],
-    );
+    const serialize = createSerializer<Async>((async ?? false as Async), renderText, blockRenderers, renderElement);
 
-    return <>{serialize(content.root.children)}</>;
+    return mapWhenReady(serialize(content.root.children), (serialized) => {
+        return <>{serialized}</>
+    })
+
 }

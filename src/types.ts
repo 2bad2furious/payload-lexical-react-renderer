@@ -1,5 +1,16 @@
 import type React from "react";
 
+export type Awaitable<T> = T | Promise<T>;
+
+export type Asyncable<Async extends boolean, T> = Async extends true ? Awaitable<T> : T;
+
+export type AwaitedAsyncable<A> =
+    A extends Asyncable<boolean, infer T> ? Awaited<T>
+        : A extends Asyncable<false, infer T> ? T
+        : A extends Asyncable<boolean, infer T> ? Awaited<T>
+                :  A extends Awaitable<infer T> ? T : A;
+
+
 export type AbstractNode<Type extends string> = {
     format?: "" | "start" | "center" | "right" | "justify" | number;
     type: Type;
@@ -145,34 +156,35 @@ export type Node =
     | UnknownBlockNode
     | AutoLinkNode;
 
-export type ElementRenderers = {
+
+export type ElementRenderers<Async extends boolean> = {
     heading: (
         props: { children: React.ReactNode } & Omit<HeadingNode, "children">,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>;
     list: (
         props: { children: React.ReactNode } & Omit<ListNode, "children">,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>
     listItem: (
         props: { children: React.ReactNode } & Omit<ListItemNode, "children">,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>
     paragraph: (
         props: { children: React.ReactNode } & Omit<ParagraphNode, "children">,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>
     quote: (
         props: { children: React.ReactNode } & Omit<QuoteNode, "children">,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>
     link: (
         props: { children: React.ReactNode } & Omit<LinkNode, "children">,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>
     autolink: (
         props: { children: React.ReactNode } & Omit<AutoLinkNode, "children">,
     ) => React.ReactNode;
-    linebreak: () => React.ReactNode;
-    tab: () => React.ReactNode;
-    upload: (props: UploadNode) => React.ReactNode;
+    linebreak: () => Asyncable<Async, React.ReactNode>
+    tab: () => Asyncable<Async, React.ReactNode>;
+    upload: (props: UploadNode) => Asyncable<Async, React.ReactNode>;
 };
 
-export type RenderMark = (mark: Mark) => React.ReactNode;
+export type RenderMark<Async extends boolean> = (mark: Mark) => Asyncable<Async, React.ReactNode>
 
 export type PayloadLexicalReactRendererContent = {
     root: Root;
@@ -180,8 +192,8 @@ export type PayloadLexicalReactRendererContent = {
 
 export type BlocksType = Record<string, any>;
 
-export type BlockRenderers<Blocks extends BlocksType> = {
+export type BlockRenderers<Async extends boolean, Blocks extends BlocksType> = {
     [BlockName in Extract<keyof Blocks, string>]?: (
         props: BlockNode<Blocks[BlockName], BlockName>,
-    ) => React.ReactNode;
+    ) => Asyncable<Async, React.ReactNode>;
 }

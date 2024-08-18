@@ -1422,9 +1422,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             }}
         />
 
-        <PayloadLexicalReactRenderer<{
-            code: Code;
-        }>
+        <PayloadLexicalReactRenderer<{ code: Code; }, false>
             content={content2}
             blockRenderers={{
                 code: (props) => {

@@ -1,5 +1,5 @@
-import type {RenderMark, TextNode} from "../types";
-import type React from "react";
+import type {Asyncable, RenderMark, TextNode} from "../types";
+import type {ReactNode} from "react";
 
 // This copy-and-pasted from somewhere in lexical here: https://github.com/facebook/lexical/blob/c2ceee223f46543d12c574e62155e619f9a18a5d/packages/lexical/src/LexicalConstants.ts
 const IS_BOLD = 1;
@@ -11,12 +11,14 @@ const IS_SUBSCRIPT = 1 << 5;
 const IS_SUPERSCRIPT = 1 << 6;
 const IS_HIGHLIGHT = 1 << 7;
 
-export function createTextRenderer (renderMark: RenderMark) {
+export type TextRenderer<Async extends boolean> = (node: TextNode) => Asyncable<Async, ReactNode>
+
+export function createTextRenderer<Async extends boolean>(renderMark: RenderMark<Async>): TextRenderer<Async> {
     if (!renderMark) {
         throw new Error("'renderMark' prop not provided.");
     }
 
-    return  (node: TextNode): React.ReactNode | null => {
+    return (node: TextNode) => {
         if (!node.format) {
             return renderMark({
                 text: node.text,

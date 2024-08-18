@@ -19,7 +19,7 @@ function getElementStyle<Type extends string>(
     return style;
 }
 
-export const defaultElementRenderers: ElementRenderers = {
+export const defaultElementRenderers: ElementRenderers<false> = {
     heading: (element) => {
         return React.createElement(
             element.tag,

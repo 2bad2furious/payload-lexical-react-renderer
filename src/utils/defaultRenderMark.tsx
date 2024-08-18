@@ -1,7 +1,7 @@
 import type {CSSProperties} from "react";
 import type {RenderMark} from "../types";
 
-export const defaultRenderMark: RenderMark = (mark) => {
+export const defaultRenderMark: RenderMark<boolean> = (mark) =>  {
     const style: CSSProperties = {};
 
     if (mark.bold) {
